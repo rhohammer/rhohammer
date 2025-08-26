@@ -1,0 +1,242 @@
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+cmake_policy(SET CMP0077 NEW)
+project(phoHammer VERSION 0.0.1 LANGUAGES CXX)
+set(FETCHCONTENT_QUIET OFF)  
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)  
+
+option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." TRUE)
+if (${FORCE_COLORED_OUTPUT})
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_compile_options (-fdiagnostics-color=always)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        add_compile_options (-fcolor-diagnostics)
+    endif ()
+endif ()
+
+# === OPTIONS ==================================================================
+
+set(
+        ZENHAMMER_ENABLE_JSON
+        ON
+        CACHE BOOL
+        "Use the nlohmann/json library to export JSON-formatted fuzzing data."
+        FORCE
+)
+
+set(
+        ZENHAMMER_ENABLE_JITTING
+        ON
+        CACHE BOOL
+        "Use the asmjit library to jit the hammering code."
+        FORCE
+)
+
+# TODO: sanitize before release!
+set(
+        ZENHAMMER_USE_SAMSUNG_PARAMS
+        OFF
+        CACHE BOOL
+        "Use debugging parameters specific to Samsung DIMMs."
+        FORCE
+)
+
+# TODO: sanitize before release!
+set(
+        ZENHAMMER_USE_DIMM_10_PARAMS
+        OFF
+        CACHE BOOL
+        "Use debugging parameters specific to DIMM 10 (Hyinx)."
+        FORCE
+)
+
+string(ASCII 27 ESC)
+
+# === DEFINITIONS ==============================================================
+
+set(GIT_COMMIT_HASH "NO_REPOSITORY")
+
+execute_process(
+        COMMAND git status
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        RESULT_VARIABLE ret
+        OUTPUT_QUIET
+        ERROR_QUIET
+)
+
+if (ret EQUAL "0")
+    # We're in a git repository, attempt to retrieve the current commit tag.
+    execute_process(
+            COMMAND git rev-parse HEAD
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_COMMIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif ()
+
+# === DEPENDENCIES =============================================================
+
+add_subdirectory(external)
+
+# === LIBZENHAMMER ============================================================
+
+add_library(
+        bs
+        include/GlobalDefines.hpp
+        src/Utilities/Helper.cpp
+        src/Forges/FuzzyHammerer.cpp
+       src/Forges/ReplayingHammerer.cpp
+        src/Fuzzer/Aggressor.cpp
+        src/Fuzzer/AggressorAccessPattern.cpp
+        src/Fuzzer/BitFlip.cpp
+        src/Fuzzer/CodeJitter.cpp
+        src/Fuzzer/FuzzingParameterSet.cpp
+        src/Fuzzer/HammeringPattern.cpp
+        src/Fuzzer/PatternAddressMapper.cpp
+        src/Fuzzer/PatternBuilder.cpp
+        src/Memory/DRAMAddr.cpp
+        src/Memory/DramAnalyzer.cpp
+        src/Memory/Memory.cpp
+        src/Utilities/Enums.cpp
+        src/Utilities/Logger.cpp
+        src/Utilities/Pagemap.cpp
+        src/Utilities/CustomRandom.cpp
+        src/Utilities/ExperimentConfig.cpp
+)
+
+target_include_directories(
+        bs
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Note: PUBLIC to also force consumers (i.e., the zenHammer executable) to use
+# these features and options.
+target_compile_features(
+        bs
+        PUBLIC
+        cxx_std_20
+)
+
+target_compile_options(
+        bs
+        PUBLIC
+        -O0
+        -Wall
+        -Wextra
+        -Wno-unused-function
+        -Wno-format-security
+        # -g3
+)
+
+target_link_libraries(
+        bs
+        PUBLIC
+        yaml-cpp
+)
+
+target_include_directories(bs PUBLIC ${YAML_CPP_SOURCE_DIR}/src)
+
+if (ZENHAMMER_ENABLE_JSON)
+    target_link_libraries(
+            bs
+            PUBLIC
+            nlohmann_json::nlohmann_json
+    )
+
+    target_compile_definitions(
+            bs
+            PUBLIC
+            ENABLE_JSON
+            FULL_SWEEP_ROWS=${FULL_SWEEP_ROWS}
+    )
+endif ()
+
+if (ZENHAMMER_ENABLE_JITTING)
+    # This fixes an issue that causes GCC 10.3 (but not 8.3 or 11.1) to miss a
+    # header somehow.
+    FetchContent_MakeAvailable(asmjit)
+
+    target_include_directories(
+            bs
+            PUBLIC
+            ${asmjit_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(
+            bs
+            PRIVATE
+            asmjit
+    )
+
+    target_compile_definitions(
+            bs
+            PUBLIC
+            ENABLE_JITTING
+    )
+endif ()
+
+# TODO: sanitize before release!
+if (ZENHAMMER_USE_SAMSUNG_PARAMS)
+    message("\n${ESC}[7;31m==================================== >> ${ESC}[5mWARNING!${ESC}[m${ESC}[7;31m << ====================================${ESC}[m")
+    message("${ESC}[7;31m=${ESC}[m${ESC}[31m ATTENTION: ZENHAMMER_USE_SAMSUNG_PARAMS is ON. This is intended for debugging only! ${ESC}[7;31m=${ESC}[m")
+    message("${ESC}[7;31m==================================== >> ${ESC}[5mWARNING!${ESC}[m${ESC}[7;31m << ====================================${ESC}[m\n")
+    target_compile_definitions(
+            bs
+            PUBLIC
+            DEBUG_SAMSUNG
+    )
+endif ()
+
+if (ZENHAMMER_ENABLE_DEBUG)
+    message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
+    message(">>>    DEBUG MODE ENABLED    <<<")
+    message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
+    target_compile_definitions(
+            bs
+            PUBLIC
+            DEBUG
+    )
+endif()
+
+if (ZENHAMMER_USE_DIMM_10_PARAMS)
+    message("\n${ESC}[7;31m==================================== >> ${ESC}[5mWARNING!${ESC}[m${ESC}[7;31m << ====================================${ESC}[m")
+    message("${ESC}[7;31m=${ESC}[m${ESC}[31m ATTENTION: ZENHAMMER_USE_DIMM_10_PARAMS is ON. This is intended for debugging only! ${ESC}[7;31m=${ESC}[m")
+    message("${ESC}[7;31m==================================== >> ${ESC}[5mWARNING!${ESC}[m${ESC}[7;31m << ====================================${ESC}[m\n")
+    target_compile_definitions(
+            bs
+            PUBLIC
+            DEBUG_DIMM10
+    )
+endif ()
+
+# === ZENHAMMER ===============================================================
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -ggdb")
+
+# 修改可执行文件名
+add_executable(
+        phoHammer
+        include/main.hpp
+        src/main.cpp
+)
+
+target_compile_definitions(
+        phoHammer
+        PRIVATE
+        GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
+)
+
+target_link_libraries(
+        phoHammer
+        PRIVATE
+        bs
+        argagg
+)
+
+# === CLEANUP ==================================================================
+
+unset(ZENHAMMER_ENABLE_JSON CACHE)
+unset(ZENHAMMER_ENABLE_JITTING CACHE)
+unset(ZENHAMMER_USE_SAMSUNG_PARAMS CACHE)
+unset(ZENHAMMER_USE_DIMM_10_PARAMS CACHE)
