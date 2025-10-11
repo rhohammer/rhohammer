@@ -7,5 +7,5 @@ CMD=$(generate_rhoHammer_cmd 1 21600)
 sudo ./hugepage_allocate.sh
 
 cd ../rhohammer/build
-
+echo $CMD
 eval $CMD

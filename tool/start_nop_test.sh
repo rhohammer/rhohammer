@@ -3,7 +3,6 @@
 source ./start_rhohammer.sh
 
 CMD=$(generate_rhoHammer_cmd 1 21600)
-echo $CMD
 
 # Script function: Loop to insert different numbers of nop instructions and execute tests
 
@@ -84,6 +83,7 @@ ${ASM_STATEMENT}
     if [ $? -eq 0 ]; then
         echo "Compilation successful, starting test execution..."
         # Execute test and redirect output to NOP_COUNT_$i.log
+        echo $CMD
         eval $CMD
         # Save results to log file
         mv stdout.log ../../output/nop_test/stdout_NOP_COUNT_$i.log
