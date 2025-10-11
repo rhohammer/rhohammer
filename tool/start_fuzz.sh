@@ -1,5 +1,11 @@
 #!/bin/bash
 
+source ./start_rhohammer.sh
+
+CMD=$(generate_rhoHammer_cmd 1 21600)
+
+sudo ./hugepage_allocate.sh
+
 cd ../rhohammer/build
 
-sudo ./rhoHammer --dimm-id 1 --runtime-limit 21600 --geometry 2,4,4 --samsung --sweeping
+eval $CMD

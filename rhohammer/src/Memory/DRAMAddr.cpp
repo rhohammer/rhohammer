@@ -28,14 +28,14 @@ void DRAMAddr::set_base_pfn(void *buff)
 
 void DRAMAddr::load_mem_config(mem_config_t cfg)
 {
-  std::string filename = "../output/mem_config.json"; 
+  std::string filename = "../../output/reverse_result/mem_config.json"; 
   if (initialize_configs_from_json(filename)) {
     if (Configs.find(cfg) != Configs.end()) {
       MemConfig = Configs[cfg];
       Logger::log_info("Using memory configuration from JSON file");
       return;
     } else {
-      Logger::log_warning("JSON config loaded but no matching IDENTIFIER found, falling back to built-in configs");
+      Logger::log_info("JSON config loaded but no matching IDENTIFIER found, falling back to built-in configs");
     }
   }
 
@@ -52,8 +52,14 @@ bool DRAMAddr::initialize_configs_from_json(const std::string &filename)
   try
   {
     std::ifstream file(filename);
-    nlohmann::json json_data;
-    file >> json_data;
+    if (!file.is_open()) {
+      Logger::log_error("Could not open JSON file: " + filename);
+      return false;
+    }
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+    
+    nlohmann::json json_data = nlohmann::json::parse(content);
 
     if (!json_data.contains("MemConfiguration")) {
       Logger::log_error("JSON file does not contain MemConfiguration object");
