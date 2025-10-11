@@ -13,7 +13,7 @@ compile:  src/utility.cc src/main.cc src/bankfunRE_2bits.cc
 	g++ -std=c++20 -g -O0 src/2bit_test.cc src/utility.cc src/test_utility.cc $(EXTFLAG) -o bin/2bit_test
 
 run:
-	./scripts/run_REmain.sh | tee ./RE.log
+	./scripts/run_REmain.sh | tee ./output/RE.log
 		
 clean:
 	rm -rf bin
