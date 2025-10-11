@@ -8,3 +8,4 @@ make && make run
 cd ../tool
 touch ../output/reverse_result/generate_matrix.log
 python3 generate_matrix.py | tee ../output/reverse_result/generate_matrix.log
+cd ../rhohammer && mkdir build && cd build && cmake .. && make -j $(nproc)

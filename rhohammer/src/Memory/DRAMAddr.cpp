@@ -25,15 +25,91 @@ void DRAMAddr::set_base_pfn(void *buff)
   base_pfn = (uint64_t)buff & (~((uint64_t)(1ULL << 30UL) - 1UL)); // get higher order bits above the super page
   // base_msb = (size_t)((size_t)buff & (UINT_MAX^((1ULL << 30UL)-1UL)));
 }
+
 void DRAMAddr::load_mem_config(mem_config_t cfg)
 {
+  std::string filename = "../output/mem_config.json"; 
+  if (initialize_configs_from_json(filename)) {
+    if (Configs.find(cfg) != Configs.end()) {
+      MemConfig = Configs[cfg];
+      Logger::log_info("Using memory configuration from JSON file");
+      return;
+    } else {
+      Logger::log_warning("JSON config loaded but no matching IDENTIFIER found, falling back to built-in configs");
+    }
+  }
+
   DRAMAddr::initialize_configs();
-  if (Configs.find(cfg) == Configs.end())
-  {
+  if (Configs.find(cfg) == Configs.end()) {
     Logger::log_error("Could not find suitable memory configuration! Exiting.");
     exit(EXIT_FAILURE);
   }
   MemConfig = Configs[cfg];
+}
+
+bool DRAMAddr::initialize_configs_from_json(const std::string &filename)
+{
+  try
+  {
+    std::ifstream file(filename);
+    nlohmann::json json_data;
+    file >> json_data;
+
+    if (!json_data.contains("MemConfiguration")) {
+      Logger::log_error("JSON file does not contain MemConfiguration object");
+      return false;
+    }
+
+    auto mem_config_json = json_data["MemConfiguration"];
+    
+    MemConfiguration config;
+    
+    config.IDENTIFIER = mem_config_json["IDENTIFIER"];
+    config.SC_SHIFT = mem_config_json["SC_SHIFT"];
+    config.SC_MASK = mem_config_json["SC_MASK"];
+    config.RK_SHIFT = mem_config_json["RK_SHIFT"];
+    config.RK_MASK = mem_config_json["RK_MASK"];
+    config.BG_SHIFT = mem_config_json["BG_SHIFT"];
+    config.BG_MASK = mem_config_json["BG_MASK"];
+    config.BK_SHIFT = mem_config_json["BK_SHIFT"];
+    config.BK_MASK = mem_config_json["BK_MASK"];
+    config.ROW_SHIFT = mem_config_json["ROW_SHIFT"];
+    config.ROW_MASK = mem_config_json["ROW_MASK"];
+    config.COL_SHIFT = mem_config_json["COL_SHIFT"];
+    config.COL_MASK = mem_config_json["COL_MASK"];
+
+    auto dram_mtx_json = mem_config_json["DRAM_MTX"];
+    if (dram_mtx_json.is_array() && dram_mtx_json.size() == 30) {
+      for (size_t i = 0; i < 30; i++) {
+        config.DRAM_MTX[i] = dram_mtx_json[i];
+      }
+    } else {
+      Logger::log_error("DRAM_MTX array is invalid or has wrong size");
+      return false;
+    }
+
+    auto addr_mtx_json = mem_config_json["ADDR_MTX"];
+    if (addr_mtx_json.is_array() && addr_mtx_json.size() == 30) {
+      for (size_t i = 0; i < 30; i++) {
+        config.ADDR_MTX[i] = addr_mtx_json[i];
+      }
+    } else {
+      Logger::log_error("ADDR_MTX array is invalid or has wrong size");
+      return false;
+    }
+
+    Configs[config.IDENTIFIER] = config;
+    
+    Logger::log_info("Successfully loaded memory configuration from JSON: " + filename);
+    Logger::log_info("IDENTIFIER: " + std::to_string(config.IDENTIFIER));
+    
+    return true;
+  }
+  catch (const std::exception &e)
+  {
+    Logger::log_error("Error loading memory configuration from JSON: " + std::string(e.what()));
+    return false;
+  }
 }
 
 DRAMAddr::DRAMAddr() = default;
