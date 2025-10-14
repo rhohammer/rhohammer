@@ -1,8 +1,9 @@
 #!/bin/bash
 
 source ./start_rhohammer.sh
+sudo ./hugepage_allocate.sh
 
-CMD=$(generate_rhoHammer_cmd 1 21600)
+CMD=$(generate_rhoHammer_cmd 1 7200)
 
 # Script function: Loop to insert different numbers of nop instructions and execute tests
 

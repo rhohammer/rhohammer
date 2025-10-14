@@ -2,7 +2,7 @@
 
 source ./start_rhohammer.sh
 
-CMD=$(generate_rhoHammer_cmd 1 21600)
+CMD=$(generate_rhoHammer_cmd 1 7200)
 
 sudo ./hugepage_allocate.sh
 

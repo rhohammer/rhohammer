@@ -4,6 +4,7 @@ cd ../
 mkdir -p output/reverse_result
 mkdir -p output/nop_test
 cd reverse 
+mkdir -p output
 touch output/RE.log
 make && make run
 cd ../tool
