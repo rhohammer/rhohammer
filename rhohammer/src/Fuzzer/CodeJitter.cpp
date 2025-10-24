@@ -479,7 +479,9 @@ void CodeJitter::hammer_pattern_unjitted(FuzzingParameterSet &fuzzing_parameters
       asm volatile("prefetchnta (%0)" : : "r"(aggressor_pairs[agg_idx]) : "memory");
       asm volatile("clflushopt (%0)" : : "r"(aggressor_pairs[agg_idx]) : "memory");
       // nop_begin
+      // BEGIN NOP INSERT
       lfence();
+      // END NOP INSERT
       // nop_end
     }
     // attack_end

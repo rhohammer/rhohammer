@@ -1,0 +1,9 @@
+{
+    "CHAN": 1,
+    "DIMM": 1,
+    "RANK": 2,
+    "BANKGROUP": 4,
+    "BANK": 4,
+    "SAMSUNG": 1,
+    "reverse": "../reverse/output/RE.log"
+}

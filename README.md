@@ -54,7 +54,7 @@ Results are stored in `stdout.log`.
 sudo ./rhoHammer --dimm-id 1 --runtime-limit 21600 --geometry 2,4,4 --samsung -j fuzz-summary.json --sweeping
 ```
 
-## Usage Notes
+#### Usage Notes
 
 - Requires sudo privileges for memory access and huge page allocation
 - The `--dimm-id` parameter specifies the target DIMM identifier
@@ -63,15 +63,35 @@ sudo ./rhoHammer --dimm-id 1 --runtime-limit 21600 --geometry 2,4,4 --samsung -j
 - Use `-j` to load previously generated patterns from JSON file
 - more information : https://github.com/comsec-group/zenhammer
 
+## Advanced Tools
+To simplify above processes and facilitate detailed experiments, we developed a series of tools located in the tool/ directory.
+For example, as root:
+
+#### Fuzzing
+```bash
+./start_fuzz.sh
+```
+
+#### Sweeping
+```bash
+./start_sweep.sh
+```
+
+#### NOP Count vs Bit-Flip Count
+```bash
+./start_nop_test.sh [starting_nop_count] [ending_nop_count] [stride]
+```
+
 ## Citing Our Work
 
 To cite 𝜌Hammer, please use the following BibTeX entry:
 
 ```
 @inproceedings{micro2025rhohammer,
-  title={ρ{H}ammer: {R}eviving {R}owHammer {A}ttacks on {N}ew {A}rchitectures via {P}refetching},
+  title={$\rho$Hammer: Reviving RowHammer Attacks on New Architectures via Prefetching},
   author={Chen, Weijie and Tang, Shan and Tang, Yulin and Luo, Xiapu and Zhang, Yinqian and Qiang, Weizhong},
-  booktitle={58th {IEEE/ACM} International Symposium on Microarchitecture, {MICRO} 2025, Seuol, Korea, October 18-22, 2025},
+  booktitle={Proceedings of the 58th IEEE/ACM International Symposium on Microarchitecture{\textregistered}},
+  pages={1433--1447},
   year={2025}
 }
 ```

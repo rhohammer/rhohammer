@@ -90,6 +90,8 @@ public:
 
   static void load_mem_config(mem_config_t cfg);
 
+  static bool initialize_configs_from_json(const std::string &filename);
+
   static void initialize_configs();
 
   explicit DRAMAddr(void *vaddr);
