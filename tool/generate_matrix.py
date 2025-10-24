@@ -41,13 +41,13 @@ class MemConfigGenerator:
             # Find the bank function section
             pattern = r'\(\s*([\d,\s]+)\s*\)'
             
-            # Filter to only include the 5 bank functions after "=== The 5 bank function ==="
-            bank_section_start = content.find("=== The 5 bank function ===")
+            # Filter to only include the bank functions after "=== The bank function ==="
+            bank_section_start = content.find("=== The bank function ===")
             if bank_section_start != -1:
                 bank_section = content[bank_section_start:]
                 bank_matches = re.findall(pattern, bank_section)
                 
-                for match in bank_matches[:5]:  # Take first 5 matches after the header
+                for match in bank_matches: 
                     numbers = [int(x.strip()) for x in match.split(',')]
                     bank_functions.append(numbers)
             
